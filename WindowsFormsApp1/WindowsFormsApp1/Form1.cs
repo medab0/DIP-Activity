@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -14,7 +14,7 @@ namespace WindowsFormsApp1
 {
     public partial class Form1 : Form
     {
-        Bitmap loaded, processed;
+        Bitmap loaded, processed, subtractImage;
         Device [] device;
         Bitmap b;
 
@@ -232,7 +232,11 @@ namespace WindowsFormsApp1
 
         private void button1_Click(object sender, EventArgs e)
         {
-            openFileDialog2.ShowDialog();
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                imageA = new Bitmap(openFileDialog1.FileName);
+                pictureBox1.Image = imageA;
+            }
         }
 
         private void pictureBox3_Click(object sender, EventArgs e)
@@ -252,34 +256,57 @@ namespace WindowsFormsApp1
 
         private void button2_Click(object sender, EventArgs e)
         {
-            openFileDialog3.ShowDialog();
+            if (openFileDialog2.ShowDialog() == DialogResult.OK)
+            {
+                imageB = new Bitmap(openFileDialog2.FileName);
+                pictureBox2.Image = imageB; // Display imageB in pictureBox2
+            }
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            Color mygreen = Color.FromArgb(0, 0, 225);
-            int greygreen = (mygreen.R + mygreen.G + mygreen.B) / 3;
-            int threshold = 5;
-            resultImage = new Bitmap(imageA.Width, imageA.Height);
-            for (int x = 0; x < imageB.Width; x++)
+            if (loaded == null)
             {
-                for (int y = 0; y < imageA.Height; y++)
+                return;
+            }
+
+            Bitmap input = (Bitmap)loaded.Clone();
+            Bitmap output = new Bitmap(input.Width, input.Height);
+
+            for (int y = 0; y < output.Height; y++)
+            {
+                for (int x = 0; x < output.Width; x++)
                 {
-                    Color pixel = imageB.GetPixel(x, y);
-                    Color backpixel = imageA.GetPixel(x, y);
-                    int grey = (pixel.R + pixel.G + pixel.B) / 3;
-                    int subtractvalue = Math.Abs(grey - greygreen);
-                    if (subtractvalue > threshold)
-                    {
-                        resultImage.SetPixel(x, y, backpixel);
-                    }
-                    else
-                    {
-                        resultImage.SetPixel(x, y, pixel);
-                    }
+                    Color camColor = input.GetPixel(x, y);
+
+                    byte max = Math.Max(Math.Max(camColor.R, camColor.G), camColor.B);
+                    byte min = Math.Min(Math.Min(camColor.R, camColor.G), camColor.B);
+
+                    bool replace =
+                        camColor.G != min
+                        && (camColor.G == max
+                        || max - camColor.G < 8)
+                        && (max - min) > 96;
+
+                    if (replace)
+                        camColor = Color.Transparent;
+
+                    output.SetPixel(x, y, camColor);
                 }
             }
-            pictureBox2.Image = resultImage;
+
+            pictureBox3.Image = output;
+            subtractImage = output;
         }
 
         private void greyScaleToolStripMenuItem_Click(object sender, EventArgs e)
